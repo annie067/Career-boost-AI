@@ -39,6 +39,12 @@ The auth flow now sends HTML SMTP emails for:
 
 Both emails are rendered from shared templates in `api/_templates.js`.
 
+## Local Development
+
+- Run `npm run dev` to start the custom local server at `http://localhost:5173`.
+- That server serves both the Vite frontend and the `/api/*` routes.
+- `npm run dev:vite` starts plain Vite without the API layer, which is only useful for frontend-only work.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

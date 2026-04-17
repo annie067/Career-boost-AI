@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-const tokenSecret = process.env.EMAIL_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'dev-email-token-secret';
+const tokenSecret = process.env.EMAIL_TOKEN_SECRET || 'dev-email-token-secret';
 
 function base64UrlEncode(input) {
   return Buffer.from(input).toString('base64url');

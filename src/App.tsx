@@ -10,6 +10,7 @@ import PortfolioView from './pages/PortfolioView';
 import InterviewSimulator from './pages/InterviewSimulator';
 import JobMatcher from './pages/JobMatcher';
 import RoadmapGenerator from './pages/RoadmapGenerator';
+import ResetPassword from './pages/ResetPassword';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -31,6 +32,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/auth" element={<Auth />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/p/:slug" element={<PortfolioView />} />
 
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

@@ -1,35 +1,109 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Briefcase, Mail, Lock, Loader2 } from 'lucide-react';
+
 import { useAuth } from '../context/AuthContext';
 import supabase from '../lib/supabase';
-import { Briefcase, Mail, Lock, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+
+type AuthMode = 'login' | 'signup' | 'verify' | 'forgot';
 
 export default function Auth() {
   const { user } = useAuth();
+  const initialMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mode') === 'verify'
+    ? 'verify'
+    : 'login';
 
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationToken, setVerificationToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'error' | 'success'>('error');
+
+  useEffect(() => {
+    const savedToken = sessionStorage.getItem('careerboost-signup-token');
+    const savedEmail = sessionStorage.getItem('careerboost-signup-email');
+
+    if (savedToken && mode !== 'verify') {
+      setMode('verify');
+    }
+
+    if (savedToken && !verificationToken) {
+      setVerificationToken(savedToken);
+    }
+
+    if (savedEmail && !email) {
+      setEmail(savedEmail);
+    }
+  }, [mode, verificationToken, email]);
 
   if (user) return <Navigate to="/" />;
 
-  // ✅ HANDLE LOGIN / SIGNUP
+  const apiRequest = async <T,>(url: string, payload: Record<string, unknown>) => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as T & {
+      error?: string;
+      message?: string;
+    };
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Something went wrong');
+    }
+
+    return data;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+    setMessageType('error');
 
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const data = await apiRequest<{ verificationToken: string }>('/api/signup-request', {
+          email,
+        });
+
+        setVerificationToken(data.verificationToken);
+        sessionStorage.setItem('careerboost-signup-token', data.verificationToken);
+        sessionStorage.setItem('careerboost-signup-email', email);
+        setVerificationCode('');
+        setMode('verify');
+        setMessageType('success');
+        setMessage('We sent a 6-digit verification code to your email.');
+      }
+
+      if (mode === 'verify') {
+        if (!verificationToken) {
+          throw new Error('Please request a new verification code.');
+        }
+
+        await apiRequest('/api/signup-verify', {
+          verificationToken,
+          code: verificationCode,
+          password,
+        });
+
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
+
         if (error) throw error;
-        setMessage('Check your email to verify your account.');
+
+        sessionStorage.removeItem('careerboost-signup-token');
+        sessionStorage.removeItem('careerboost-signup-email');
       }
 
       if (mode === 'login') {
@@ -41,20 +115,42 @@ export default function Auth() {
       }
 
       if (mode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: 'http://localhost:5173/reset-password',
-        });
-        if (error) throw error;
-        setMessage('Password reset link sent to your email.');
+        await apiRequest('/api/password-reset-request', { email });
+        setMessageType('success');
+        setMessage('If the email exists, a reset link has been sent.');
       }
     } catch (err: any) {
+      setMessageType('error');
       setMessage(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ GOOGLE LOGIN (FINAL)
+  const handleResendCode = async () => {
+    setLoading(true);
+    setMessage('');
+    setMessageType('error');
+
+    try {
+      const data = await apiRequest<{ verificationToken: string }>('/api/signup-request', {
+        email,
+      });
+
+      setVerificationToken(data.verificationToken);
+      sessionStorage.setItem('careerboost-signup-token', data.verificationToken);
+      sessionStorage.setItem('careerboost-signup-email', email);
+      setVerificationCode('');
+      setMessageType('success');
+      setMessage('A fresh verification code has been sent.');
+    } catch (err: any) {
+      setMessageType('error');
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -65,6 +161,7 @@ export default function Auth() {
 
     if (error) {
       console.error(error);
+      setMessageType('error');
       setMessage('Google login failed');
     }
   };
@@ -84,13 +181,16 @@ export default function Auth() {
         </div>
 
         {message && (
-          <div className="mb-4 text-center text-sm text-red-500">
+          <div
+            className={`mb-4 text-center text-sm ${
+              messageType === 'success' ? 'text-emerald-500' : 'text-red-500'
+            }`}
+          >
             {message}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* EMAIL */}
           <div className="relative">
             <Mail className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -103,7 +203,21 @@ export default function Auth() {
             />
           </div>
 
-          {/* PASSWORD (hide in forgot mode) */}
+          {mode === 'verify' && (
+            <div className="relative">
+              <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                required
+                inputMode="numeric"
+                placeholder="6-digit verification code"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border rounded-lg"
+              />
+            </div>
+          )}
+
           {mode !== 'forgot' && (
             <div className="relative">
               <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -124,47 +238,36 @@ export default function Auth() {
             className="w-full py-3 bg-blue-600 text-white rounded-lg flex justify-center items-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-
             {mode === 'login' && 'Sign In'}
             {mode === 'signup' && 'Create Account'}
+            {mode === 'verify' && 'Verify & Create Account'}
             {mode === 'forgot' && 'Send Reset Link'}
           </button>
         </form>
 
-        {/* GOOGLE LOGIN */}
-        {mode !== 'forgot' && (
+        {mode === 'login' && (
           <>
             <div className="my-4 text-center text-sm">or</div>
 
-            <button
-              onClick={handleGoogleLogin}
-              className="w-full py-3 border rounded-lg"
-            >
+            <button onClick={handleGoogleLogin} className="w-full py-3 border rounded-lg">
               Continue with Google
             </button>
           </>
         )}
 
-        {/* SWITCH MODES */}
         <div className="mt-6 text-center text-sm space-y-2">
           {mode === 'login' && (
             <>
               <p>
-                Don’t have an account?{' '}
-                <button
-                  onClick={() => setMode('signup')}
-                  className="text-blue-500"
-                >
+                Don&apos;t have an account?{' '}
+                <button type="button" onClick={() => setMode('signup')} className="text-blue-500">
                   Sign Up
                 </button>
               </p>
 
               <p>
                 Forgot password?{' '}
-                <button
-                  onClick={() => setMode('forgot')}
-                  className="text-blue-500"
-                >
+                <button type="button" onClick={() => setMode('forgot')} className="text-blue-500">
                   Reset
                 </button>
               </p>
@@ -174,22 +277,49 @@ export default function Auth() {
           {mode === 'signup' && (
             <p>
               Already have an account?{' '}
-              <button
-                onClick={() => setMode('login')}
-                className="text-blue-500"
-              >
+              <button type="button" onClick={() => setMode('login')} className="text-blue-500">
                 Sign In
               </button>
             </p>
           )}
 
+          {mode === 'verify' && (
+            <>
+              <p>
+                Didn&apos;t get the code?{' '}
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  className="text-blue-500"
+                  disabled={loading}
+                >
+                  Resend code
+                </button>
+              </p>
+
+              <p>
+                Use a different email?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('signup');
+                    setVerificationCode('');
+                    setVerificationToken('');
+                    sessionStorage.removeItem('careerboost-signup-token');
+                    sessionStorage.removeItem('careerboost-signup-email');
+                  }}
+                  className="text-blue-500"
+                >
+                  Go back
+                </button>
+              </p>
+            </>
+          )}
+
           {mode === 'forgot' && (
             <p>
               Back to login?{' '}
-              <button
-                onClick={() => setMode('login')}
-                className="text-blue-500"
-              >
+              <button type="button" onClick={() => setMode('login')} className="text-blue-500">
                 Sign In
               </button>
             </p>

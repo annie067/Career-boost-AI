@@ -16,10 +16,28 @@ Required for the API routes in `api/`:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
+Required for SMTP email verification and password reset flows:
+
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASSWORD`
+- `SMTP_FROM`
+- `APP_URL`
+- `EMAIL_TOKEN_SECRET`
+- `MAIL_API_KEY` if you want to lock down the generic `/api/send-mail` endpoint
+
 Optional restore hook variables used by `api/_wake.js`:
 
 - `FULLSTACK_PROJECT_REF`
 - `FULLSTACK_RESTORE_API_URL`
+
+The auth flow now sends HTML SMTP emails for:
+
+- signup verification codes
+- password reset links
+
+Both emails are rendered from shared templates in `api/_templates.js`.
 
 Currently, two official plugins are available:
 

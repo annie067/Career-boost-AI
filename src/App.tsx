@@ -1,6 +1,4 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import  supabase from './lib/supabase';
 
 import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
@@ -30,18 +28,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-
-  // ✅ Supabase test connection
-  useEffect(() => {
-    const test = async () => {
-      const { data, error } = await supabase.from('jobs').select('*');
-      console.log("SUPABASE DATA:", data);
-      console.log("SUPABASE ERROR:", error);
-    };
-
-    test();
-  }, []);
-
   return (
     <Routes>
       <Route path="/auth" element={<Auth />} />

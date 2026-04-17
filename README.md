@@ -2,6 +2,25 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Environment Variables
+
+Create a local `.env` file from `.env.example` and fill in the Supabase values before running the app.
+
+Required for the Vite client:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Required for the API routes in `api/`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Optional restore hook variables used by `api/_wake.js`:
+
+- `FULLSTACK_PROJECT_REF`
+- `FULLSTACK_RESTORE_API_URL`
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

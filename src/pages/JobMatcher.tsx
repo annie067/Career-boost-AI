@@ -7,6 +7,7 @@ export default function JobMatcher() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [savedJobs, setSavedJobs] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   
   const [skills, setSkills] = useState('');
   const [location, setLocation] = useState('');
@@ -15,6 +16,7 @@ export default function JobMatcher() {
 
   const fetchData = async () => {
     setLoading(true);
+    setError('');
     try {
       const params = new URLSearchParams();
       if (skills) params.append('skills', skills);
@@ -28,10 +30,22 @@ export default function JobMatcher() {
       
       const jobsData = await jobsRes.json();
       const savedData = await savedRes.json();
-      
-      setJobs(jobsData);
+
+      if (!jobsRes.ok) {
+        throw new Error(jobsData?.error || 'Failed to load jobs');
+      }
+      if (!Array.isArray(savedData)) {
+        throw new Error(savedData?.error || 'Failed to load saved jobs');
+      }
+
+      setJobs(Array.isArray(jobsData) ? jobsData : []);
       setSavedJobs(savedData);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+    } catch (err) {
+      console.error(err);
+      setJobs([]);
+      setSavedJobs([]);
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally { setLoading(false); }
   };
 
   useEffect(() => { if (token) fetchData(); }, [token]);
@@ -57,6 +71,12 @@ export default function JobMatcher() {
         <h1 className="text-3xl font-bold">Job & Internship Matcher</h1>
         <p className="text-muted-foreground mt-2">Find roles that perfectly match your skills and experience.</p>
       </div>
+
+      {error && (
+        <div className="glass-panel p-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 text-yellow-200">
+          {error}
+        </div>
+      )}
 
       <div className="glass-panel p-4 rounded-2xl space-y-4">
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 w-full">
@@ -92,6 +112,15 @@ export default function JobMatcher() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
+          {jobs.length === 0 && (
+            <div className="col-span-full text-center py-20 glass-panel rounded-2xl border-dashed">
+              <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-bold mb-2">No jobs available yet</h3>
+              <p className="text-muted-foreground">
+                The jobs table is missing or empty in Supabase. Add seed data to start matching roles.
+              </p>
+            </div>
+          )}
           {jobs.map((job) => (
             <div key={job.id} className="glass-panel p-6 rounded-2xl flex flex-col h-full hover:border-primary/50 transition-all group relative overflow-hidden">
               {job.match_percentage && (
@@ -136,13 +165,6 @@ export default function JobMatcher() {
               </div>
             </div>
           ))}
-          {jobs.length === 0 && (
-            <div className="col-span-2 text-center py-20 glass-panel rounded-2xl border-dashed">
-              <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-bold mb-2">No jobs found</h3>
-              <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
-            </div>
-          )}
         </div>
       )}
     </div>

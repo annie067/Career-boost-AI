@@ -18,7 +18,17 @@ export default async function handler(req, res) {
       const { skills, location, type } = req.query;
       
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        const missingTable =
+          error.code === 'PGRST205' ||
+          /Could not find the table ['"]?public\.jobs['"]?/i.test(error.message || '');
+
+        if (missingTable) {
+          return res.status(200).json([]);
+        }
+
+        throw error;
+      }
       
       let filtered = data;
 

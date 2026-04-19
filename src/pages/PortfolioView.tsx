@@ -1,10 +1,30 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ExternalLink, Mail, MapPin, Briefcase } from 'lucide-react';
+import { ExternalLink, Briefcase } from 'lucide-react';
+
+interface Project {
+  title: string;
+  description: string;
+  link?: string;
+}
+
+interface PortfolioData {
+  name: string;
+  bio: string;
+  skills: string[];
+  education?: string;
+  projects: Project[];
+  socialLinks: {
+    github?: string;
+    linkedin?: string;
+    website?: string;
+  };
+  error?: string;
+}
 
 export default function PortfolioView() {
   const { slug } = useParams();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<PortfolioData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,11 +64,11 @@ export default function PortfolioView() {
           </div>
         </header>
 
-        {data.skills && (
+        {data.skills && data.skills.length > 0 && (
           <section className="space-y-4">
             <h2 className="text-2xl font-bold border-b border-border pb-2">Skills</h2>
             <div className="flex flex-wrap gap-2">
-              {data.skills.split(',').map((skill: string, i: number) => (
+              {data.skills.map((skill: string, i: number) => (
                 <span key={i} className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm font-medium">
                   {skill.trim()}
                 </span>
@@ -61,7 +81,7 @@ export default function PortfolioView() {
           <section className="space-y-6">
             <h2 className="text-2xl font-bold border-b border-border pb-2">Featured Projects</h2>
             <div className="grid gap-6">
-              {data.projects.map((proj: any, i: number) => (
+              {data.projects.map((proj: Project, i: number) => (
                 <div key={i} className="group p-6 rounded-2xl border border-border bg-card hover:border-primary/50 transition-colors">
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="text-xl font-bold">{proj.title}</h3>

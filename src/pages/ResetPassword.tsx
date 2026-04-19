@@ -56,9 +56,9 @@ export default function ResetPassword() {
       setMessage('Your password has been updated. You can sign in again now.');
       setPassword('');
       setConfirmPassword('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setMessageType('error');
-      setMessage(err.message);
+      setMessage(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }

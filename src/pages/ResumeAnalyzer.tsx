@@ -1,11 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Upload, FileText, CheckCircle, AlertCircle, Loader2, Trash2, Code, FileUp, Briefcase } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Loader2, Trash2, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+interface ResumeData {
+  id: string;
+  title: string;
+  filename: string;
+  score: number;
+  ats_score?: number;
+  missing_skills?: string[];
+  suggestions?: string[];
+  created_at: string;
+  analysis?: {
+    strengths?: string[];
+    weaknesses?: string[];
+    suggestions?: string[];
+  };
+}
 
 export default function ResumeAnalyzer() {
   const { token } = useAuth();
-  const [resumes, setResumes] = useState<any[]>([]);
+  const [resumes, setResumes] = useState<ResumeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   
@@ -15,7 +31,7 @@ export default function ResumeAnalyzer() {
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchResumes = async () => {
+  const fetchResumes = useCallback(async () => {
     try {
       const res = await fetch('/api/resumes', { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
@@ -25,11 +41,11 @@ export default function ResumeAnalyzer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (token) fetchResumes();
-  }, [token]);
+  }, [token, fetchResumes]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
@@ -83,7 +99,7 @@ export default function ResumeAnalyzer() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await fetch('/api/resumes', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ id }) });
       fetchResumes();
@@ -112,7 +128,7 @@ export default function ResumeAnalyzer() {
           <div className="flex-1 flex flex-col">
             {activeTab === 'upload' ? (
               <div onDragOver={(e) => e.preventDefault()} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()} className="flex-1 border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-colors cursor-pointer bg-muted/10 min-h-[200px]">
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.docx" className="hidden" />
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.docx" className="hidden" aria-label="Upload PDF or DOCX resume file" />
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4"><Upload className="w-8 h-8 text-primary" /></div>
                 <h4 className="text-base font-semibold mb-1">Drop PDF/DOCX here</h4>
                 <p className="text-xs text-muted-foreground mb-4">Max 5MB</p>
@@ -152,7 +168,7 @@ export default function ResumeAnalyzer() {
             <AnimatePresence>
               {resumes.map(resume => (
                 <motion.div key={resume.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-                  <button onClick={() => handleDelete(resume.id)} className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button type="button" aria-label="Delete resume" onClick={() => handleDelete(resume.id)} className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Trash2 className="w-5 h-5" />
                   </button>
                   
@@ -163,13 +179,12 @@ export default function ResumeAnalyzer() {
                     </div>
                     <div className="flex gap-6">
                       <div className="text-center">
-                        <div className={`text-4xl font-black ${resume.ats_score >= 80 ? 'text-green-500' : resume.ats_score >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{resume.ats_score}</div>
+                        <div className={`text-4xl font-black ${((resume.ats_score ?? 0) >= 80 ? 'text-green-500' : (resume.ats_score ?? 0) >= 60 ? 'text-yellow-500' : 'text-red-500')}`}>{resume.ats_score ?? 0}</div>
                         <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">ATS Score</span>
                       </div>
-                      {/* Detailed feedback is stored in suggestions array in this structure */}
-                      {resume.suggestions?.length > 3 && (
+                      {resume.suggestions && resume.suggestions.length > 3 && (
                         <div className="text-center">
-                          <div className="text-4xl font-black text-purple-500">{(resume.ats_score - 5 > 0) ? resume.ats_score - 5 : 0}%</div>
+                          <div className="text-4xl font-black text-purple-500">{( (resume.ats_score ?? 0) - 5 > 0 ) ? (resume.ats_score ?? 0) - 5 : 0}%</div>
                           <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Job Match</span>
                         </div>
                       )}

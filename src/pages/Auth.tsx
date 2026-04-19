@@ -119,9 +119,9 @@ export default function Auth() {
         setMessageType('success');
         setMessage('If the email exists, a reset link has been sent.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setMessageType('error');
-      setMessage(err.message);
+      setMessage(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -143,9 +143,9 @@ export default function Auth() {
       setVerificationCode('');
       setMessageType('success');
       setMessage('A fresh verification code has been sent.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setMessageType('error');
-      setMessage(err.message);
+      setMessage(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }

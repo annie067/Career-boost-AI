@@ -1,12 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { FileText, Mic, Briefcase, TrendingUp, ArrowRight, Award, Clock } from 'lucide-react';
+import { FileText, Mic, TrendingUp, ArrowRight, Award, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+interface DashboardData {
+  resumes: number;
+  interviews: number;
+  applications: number;
+  profile_completion: number;
+  timeline?: TimelineItem[];
+}
+
+interface TimelineItem {
+  type: 'resume' | 'interview';
+  title: string;
+  score: number;
+  date: string;
+}
+
 export default function Dashboard() {
   const { token, user } = useAuth();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -107,7 +122,7 @@ export default function Dashboard() {
         <div className="glass-panel p-6 rounded-2xl flex flex-col">
           <h3 className="text-xl font-bold mb-6">Recent Activity</h3>
           <div className="flex-1 overflow-y-auto pr-2 space-y-6">
-            {timeline.length > 0 ? timeline.map((item: any, i: number) => (
+            {timeline.length > 0 ? timeline.map((item: TimelineItem, i: number) => (
               <div key={i} className="flex gap-4 relative">
                 {i !== timeline.length - 1 && <div className="absolute left-[11px] top-8 bottom-[-24px] w-px bg-border" />}
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 ${item.type === 'resume' ? 'bg-blue-500/20 text-blue-500' : 'bg-green-500/20 text-green-500'}`}>

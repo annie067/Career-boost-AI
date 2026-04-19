@@ -1,24 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Map, Target, CheckCircle2, Circle, Loader2, ArrowRight } from 'lucide-react';
+import { Map, Target, CheckCircle2, Circle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+interface RoadmapStep {
+  title: string;
+  description: string;
+  completed: boolean;
+  resources?: string[];
+}
+
+interface RoadmapData {
+  id: string;
+  goal: string;
+  steps: RoadmapStep[];
+  created_at: string;
+}
 
 export default function RoadmapGenerator() {
   const { token } = useAuth();
-  const [roadmaps, setRoadmaps] = useState<any[]>([]);
+  const [roadmaps, setRoadmaps] = useState<RoadmapData[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [goal, setGoal] = useState('');
 
-  const fetchRoadmaps = async () => {
+  const fetchRoadmaps = useCallback(async () => {
     try {
       const res = await fetch('/api/roadmaps', { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       setRoadmaps(data);
     } catch (err) { console.error(err); } finally { setLoading(false); }
-  };
+  }, [token]);
 
-  useEffect(() => { if (token) fetchRoadmaps(); }, [token]);
+  useEffect(() => { if (token) fetchRoadmaps(); }, [token, fetchRoadmaps]);
 
   const handleGenerate = async () => {
     if (!goal.trim()) return;
@@ -81,7 +95,7 @@ export default function RoadmapGenerator() {
               <p className="text-sm text-muted-foreground mb-8">Generated on {new Date(rm.created_at).toLocaleDateString()}</p>
               
               <div className="relative border-l-2 border-muted ml-3 md:ml-4 space-y-8 pb-4">
-                {rm.steps?.map((step: any, idx: number) => (
+                {rm.steps?.map((step: RoadmapStep, idx: number) => (
                   <div key={idx} className="relative pl-8 md:pl-10">
                     <div className={`absolute -left-[11px] top-1 w-5 h-5 rounded-full flex items-center justify-center ${step.completed ? 'bg-green-500 text-white' : 'bg-background border-2 border-purple-500 text-background'}`}>
                       {step.completed ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-3 h-3 fill-purple-500" />}

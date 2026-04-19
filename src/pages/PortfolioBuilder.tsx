@@ -1,11 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Globe, Link as LinkIcon, Save, Loader2, ExternalLink } from 'lucide-react';
+import { Link as LinkIcon, Save, Loader2, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+interface PortfolioData {
+  id: string;
+  slug?: string;
+  name: string;
+  bio: string;
+  skills: string;
+  education?: string;
+  projects: Array<{
+    title: string;
+    description: string;
+    link?: string;
+  }>;
+  socialLinks: {
+    github?: string;
+    linkedin?: string;
+    website?: string;
+  };
+}
 
 export default function PortfolioBuilder() {
   const { token, user } = useAuth();
-  const [portfolio, setPortfolio] = useState<any>(null);
+  const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 

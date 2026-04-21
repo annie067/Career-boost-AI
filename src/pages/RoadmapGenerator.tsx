@@ -1,110 +1,235 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Map, Target, CheckCircle2, Circle, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, Circle, Loader2, Map, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import { generateRoadmap, roadmaps, type RoadmapStep } from '../lib/roadmapData';
+import { getUserProfile, getUserProgress, mergeUniqueSkills, upsertUserProgress } from '../lib/database';
 
-interface RoadmapStep {
-  title: string;
-  description: string;
-  completed: boolean;
-  resources?: string[];
-}
-
-interface RoadmapData {
+interface GeneratedRoadmap {
   id: string;
   goal: string;
+  matchPercentage: number;
+  missingSkills: string[];
   steps: RoadmapStep[];
-  created_at: string;
+  createdAt: string;
+}
+
+function storageKey(userId: string): string {
+  return `generated_roadmaps_${userId}`;
 }
 
 export default function RoadmapGenerator() {
-  const { token } = useAuth();
-  const [roadmaps, setRoadmaps] = useState<RoadmapData[]>([]);
+  const { user } = useAuth();
+
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [goal, setGoal] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchRoadmaps = useCallback(async () => {
-    try {
-      const res = await fetch('/api/roadmaps', { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      setRoadmaps(data);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
-  }, [token]);
+  const [targetRole, setTargetRole] = useState('Frontend Developer');
+  const [skillInput, setSkillInput] = useState('');
+  const [userSkills, setUserSkills] = useState<string[]>([]);
+  const [completedSkills, setCompletedSkills] = useState<string[]>([]);
+  const [generated, setGenerated] = useState<GeneratedRoadmap[]>([]);
 
-  useEffect(() => { if (token) fetchRoadmaps(); }, [token, fetchRoadmaps]);
+  const roleOptions = useMemo(() => Object.keys(roadmaps), []);
 
-  const handleGenerate = async () => {
-    if (!goal.trim()) return;
-    setGenerating(true);
-    try {
-      const res = await fetch('/api/roadmaps', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ goal })
-      });
-      if (res.ok) {
-        setGoal('');
-        fetchRoadmaps();
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
       }
-    } catch (err) { console.error(err); } finally { setGenerating(false); }
+
+      try {
+        const [profile, progress] = await Promise.all([
+          getUserProfile(user.id),
+          getUserProgress(user.id),
+        ]);
+
+        setUserSkills(profile?.skills ?? []);
+        setCompletedSkills(progress?.completed_skills ?? []);
+
+        const stored = localStorage.getItem(storageKey(user.id));
+        if (stored) {
+          setGenerated(JSON.parse(stored) as GeneratedRoadmap[]);
+        }
+      } catch (loadError) {
+        console.error(loadError);
+        setError('Failed to load roadmap data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadData();
+  }, [user]);
+
+  const addSkill = () => {
+    const value = skillInput.trim();
+    if (!value) return;
+
+    setUserSkills((prev) => mergeUniqueSkills(prev, [value]));
+    setSkillInput('');
   };
+
+  const removeSkill = (skillToRemove: string) => {
+    setUserSkills((prev) => prev.filter((skill) => skill.toLowerCase() !== skillToRemove.toLowerCase()));
+  };
+
+  const generate = async () => {
+    if (!user) return;
+
+    setGenerating(true);
+    setError(null);
+
+    try {
+      const roadmap = generateRoadmap(targetRole, userSkills, completedSkills);
+      const entry: GeneratedRoadmap = {
+        id: `roadmap-${Date.now()}`,
+        goal: targetRole,
+        matchPercentage: roadmap.matchPercentage,
+        missingSkills: roadmap.missingSkills,
+        steps: roadmap.steps,
+        createdAt: new Date().toISOString(),
+      };
+
+      const updated = [entry, ...generated].slice(0, 15);
+      setGenerated(updated);
+      localStorage.setItem(storageKey(user.id), JSON.stringify(updated));
+    } catch (generateError) {
+      console.error(generateError);
+      setError('Could not generate roadmap.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const toggleStep = async (roadmapId: string, stepIndex: number) => {
+    if (!user) return;
+
+    const updatedRoadmaps = generated.map((roadmap) => {
+      if (roadmap.id !== roadmapId) return roadmap;
+      const steps = roadmap.steps.map((step, index) =>
+        index === stepIndex ? { ...step, completed: !step.completed } : step,
+      );
+      return { ...roadmap, steps };
+    });
+
+    setGenerated(updatedRoadmaps);
+    localStorage.setItem(storageKey(user.id), JSON.stringify(updatedRoadmaps));
+
+    const newlyCompletedSkills = updatedRoadmaps
+      .flatMap((roadmap) => roadmap.steps)
+      .filter((step) => step.completed && step.relatedSkill)
+      .map((step) => step.relatedSkill as string);
+
+    const mergedCompleted = mergeUniqueSkills(completedSkills, newlyCompletedSkills);
+    setCompletedSkills(mergedCompleted);
+
+    try {
+      await upsertUserProgress({ user_id: user.id, completed_skills: mergedCompleted });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">AI Career Roadmap</h1>
-        <p className="text-muted-foreground mt-2">Generate a step-by-step personalized guide to reach your dream role.</p>
+        <h1 className="text-3xl font-bold">Career Roadmap Generator</h1>
+        <p className="text-muted-foreground mt-2">Compare your current skills with target role requirements and plan next steps.</p>
       </div>
 
-      <div className="glass-panel p-6 rounded-2xl border-t-4 border-t-purple-500">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Target className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input 
-              type="text" 
-              value={goal} 
-              onChange={e => setGoal(e.target.value)} 
-              placeholder="What is your career goal? (e.g. Senior Frontend Developer at FAANG)" 
-              className="w-full pl-12 pr-4 py-4 bg-background border border-border rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" 
-            />
-          </div>
-          <button 
-            onClick={handleGenerate} 
-            disabled={generating || !goal.trim()} 
-            className="w-full sm:w-auto px-8 py-4 bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
-          >
-            {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Map className="w-5 h-5" />}
-            Generate Roadmap
-          </button>
+      <div className="glass-panel rounded-2xl p-6 space-y-5">
+        <div>
+          <label className="block text-sm font-medium mb-2">Target Role</label>
+          <select value={targetRole} onChange={(event) => setTargetRole(event.target.value)} className="w-full rounded-xl border border-border bg-background p-3 outline-none focus:ring-2 focus:ring-primary">
+            {roleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
+          </select>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Current Skills</label>
+          <div className="flex gap-2">
+            <input
+              value={skillInput}
+              onChange={(event) => setSkillInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  addSkill();
+                }
+              }}
+              placeholder="Add skill"
+              className="flex-1 rounded-xl border border-border bg-background p-3 outline-none focus:ring-2 focus:ring-primary"
+            />
+            <button type="button" onClick={addSkill} className="rounded-xl bg-secondary px-4 hover:bg-secondary/80">Add</button>
+          </div>
+
+          {userSkills.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {userSkills.map((skill) => (
+                <button key={skill} type="button" onClick={() => removeSkill(skill)} className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary hover:bg-primary/20">
+                  {skill} x
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {error && <p className="text-sm text-red-300">{error}</p>}
+
+        <button type="button" onClick={generate} disabled={generating} className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex justify-center items-center gap-2">
+          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Map className="h-4 w-4" />}
+          Generate Roadmap
+        </button>
       </div>
 
-      <div className="space-y-6">
-        {loading ? (
-          <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
-        ) : roadmaps.length === 0 ? (
-          <div className="text-center p-12 glass-panel rounded-2xl border-dashed">
-            <Map className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <p className="text-muted-foreground">No roadmaps generated yet. Tell us your goal above!</p>
-          </div>
+      <div className="space-y-5">
+        {generated.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">Generate your first roadmap to get started.</div>
         ) : (
-          roadmaps.map((rm, i) => (
-            <motion.div key={rm.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="glass-panel p-6 md:p-8 rounded-2xl">
-              <h3 className="text-2xl font-bold mb-2 flex items-center gap-2"><Target className="w-6 h-6 text-purple-500" /> {rm.goal}</h3>
-              <p className="text-sm text-muted-foreground mb-8">Generated on {new Date(rm.created_at).toLocaleDateString()}</p>
-              
-              <div className="relative border-l-2 border-muted ml-3 md:ml-4 space-y-8 pb-4">
-                {rm.steps?.map((step: RoadmapStep, idx: number) => (
-                  <div key={idx} className="relative pl-8 md:pl-10">
-                    <div className={`absolute -left-[11px] top-1 w-5 h-5 rounded-full flex items-center justify-center ${step.completed ? 'bg-green-500 text-white' : 'bg-background border-2 border-purple-500 text-background'}`}>
-                      {step.completed ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-3 h-3 fill-purple-500" />}
-                    </div>
-                    <div className="bg-muted/30 p-5 rounded-xl border border-border/50 hover:border-purple-500/30 transition-colors">
-                      <h4 className="text-lg font-bold mb-2">Step {idx + 1}: {step.title}</h4>
-                      <p className="text-muted-foreground leading-relaxed">{step.desc}</p>
-                    </div>
+          generated.map((entry, index) => (
+            <motion.div key={entry.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }} className="glass-panel rounded-2xl p-6 space-y-5">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold inline-flex items-center gap-2"><Target className="h-5 w-5 text-primary" />{entry.goal}</h2>
+                  <p className="text-xs text-muted-foreground mt-1">Generated {new Date(entry.createdAt).toLocaleString()}</p>
+                </div>
+                <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">Match {entry.matchPercentage}%</div>
+              </div>
+
+              {entry.missingSkills.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Missing Skills</p>
+                  <div className="flex flex-wrap gap-2">
+                    {entry.missingSkills.map((skill) => (
+                      <span key={skill} className="rounded-full bg-red-500/10 px-3 py-1 text-xs text-red-300">{skill}</span>
+                    ))}
                   </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {entry.steps.map((step, stepIndex) => (
+                  <button key={`${entry.id}-${step.title}`} type="button" onClick={() => void toggleStep(entry.id, stepIndex)} className="w-full rounded-xl border border-border bg-background/40 p-3 text-left hover:border-primary/40">
+                    <div className="flex items-start gap-3">
+                      {step.completed ? <CheckCircle2 className="h-5 w-5 text-green-400 mt-0.5" /> : <Circle className="h-5 w-5 text-muted-foreground mt-0.5" />}
+                      <div>
+                        <p className="font-medium">{step.title}</p>
+                        <p className="text-sm text-muted-foreground">{step.description}</p>
+                        <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{step.level}</p>
+                      </div>
+                    </div>
+                  </button>
                 ))}
               </div>
             </motion.div>

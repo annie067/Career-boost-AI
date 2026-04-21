@@ -1,125 +1,26 @@
-// src/lib/jobsData.ts
-import { Job } from './jobMatcher';
+import type { Job } from './jobMatcher';
 
 export const sampleJobs: Job[] = [
-  {
-    id: 1,
-    title: "Frontend Developer",
-    company: "TechCorp Inc.",
-    required_skills: ["React", "TypeScript", "CSS", "HTML", "JavaScript"],
-    description: "Build modern web applications using React and TypeScript. Work with a team of designers and backend developers to create exceptional user experiences.",
-    location: "Remote",
-    type: "Full-time",
-    url: "https://example.com/job/1"
-  },
-  {
-    id: 2,
-    title: "Full Stack Developer",
-    company: "StartupXYZ",
-    required_skills: ["React", "Node.js", "Express", "MongoDB", "JavaScript"],
-    description: "Develop both frontend and backend components for our SaaS platform. You'll work on everything from user interfaces to API development.",
-    location: "San Francisco, CA",
-    type: "Full-time",
-    url: "https://example.com/job/2"
-  },
-  {
-    id: 3,
-    title: "Data Analyst",
-    company: "DataDriven Co.",
-    required_skills: ["Python", "Pandas", "SQL", "Tableau", "Excel"],
-    description: "Analyze large datasets to provide insights for business decisions. Create visualizations and reports for stakeholders.",
-    location: "New York, NY",
-    type: "Full-time",
-    url: "https://example.com/job/3"
-  },
-  {
-    id: 4,
-    title: "DevOps Engineer",
-    company: "CloudTech Solutions",
-    required_skills: ["AWS", "Docker", "Kubernetes", "Jenkins", "Terraform"],
-    description: "Manage cloud infrastructure and CI/CD pipelines. Ensure high availability and scalability of our applications.",
-    location: "Remote",
-    type: "Full-time",
-    url: "https://example.com/job/4"
-  },
-  {
-    id: 5,
-    title: "Mobile App Developer",
-    company: "AppWorks",
-    required_skills: ["React Native", "JavaScript", "iOS", "Android", "Firebase"],
-    description: "Develop cross-platform mobile applications using React Native. Work on both iOS and Android platforms.",
-    location: "Austin, TX",
-    type: "Full-time",
-    url: "https://example.com/job/5"
-  },
-  {
-    id: 6,
-    title: "Backend Developer",
-    company: "ServerSide Ltd.",
-    required_skills: ["Node.js", "Express", "PostgreSQL", "Redis", "GraphQL"],
-    description: "Build robust backend services and APIs. Optimize database queries and implement caching strategies.",
-    location: "Remote",
-    type: "Full-time",
-    url: "https://example.com/job/6"
-  },
-  {
-    id: 7,
-    title: "Machine Learning Engineer",
-    company: "AI Innovations",
-    required_skills: ["Python", "TensorFlow", "Scikit-learn", "Pandas", "Jupyter"],
-    description: "Develop and deploy machine learning models. Work with large datasets and implement AI solutions.",
-    location: "Seattle, WA",
-    type: "Full-time",
-    url: "https://example.com/job/7"
-  },
-  {
-    id: 8,
-    title: "UI/UX Developer",
-    company: "DesignTech",
-    required_skills: ["React", "CSS", "Figma", "Tailwind CSS", "JavaScript"],
-    description: "Create beautiful and functional user interfaces. Collaborate closely with designers to implement pixel-perfect designs.",
-    location: "Los Angeles, CA",
-    type: "Full-time",
-    url: "https://example.com/job/8"
-  },
-  {
-    id: 9,
-    title: "Software Engineer Intern",
-    company: "BigTech Corp",
-    required_skills: ["JavaScript", "Python", "Git", "SQL", "Agile"],
-    description: "Join our engineering team as an intern. Work on real projects and learn from experienced developers.",
-    location: "Mountain View, CA",
-    type: "Internship",
-    url: "https://example.com/job/9"
-  },
-  {
-    id: 10,
-    title: "Cloud Architect",
-    company: "CloudMasters",
-    required_skills: ["AWS", "Azure", "Terraform", "Docker", "Kubernetes"],
-    description: "Design and implement cloud infrastructure solutions. Lead migration projects and optimize cloud costs.",
-    location: "Remote",
-    type: "Full-time",
-    url: "https://example.com/job/10"
-  },
-  {
-    id: 11,
-    title: "QA Engineer",
-    company: "QualityFirst Inc.",
-    required_skills: ["Selenium", "JavaScript", "Jest", "Cypress", "Git"],
-    description: "Ensure software quality through automated testing. Write test scripts and maintain testing frameworks.",
-    location: "Chicago, IL",
-    type: "Full-time",
-    url: "https://example.com/job/11"
-  },
-  {
-    id: 12,
-    title: "Product Manager",
-    company: "ProductVision",
-    required_skills: ["Agile", "Scrum", "SQL", "Analytics", "Communication"],
-    description: "Drive product development from ideation to launch. Work with cross-functional teams to deliver value to users.",
-    location: "Boston, MA",
-    type: "Full-time",
-    url: "https://example.com/job/12"
-  }
+  { id: 'job-1', title: 'Frontend Developer', company: 'TechCorp Inc.', required_skills: ['React', 'TypeScript', 'CSS', 'HTML', 'JavaScript'], description: 'Build and maintain interactive web interfaces with strong performance and accessibility.', location: 'Remote', type: 'Full-time', url: 'https://example.com/job/1' },
+  { id: 'job-2', title: 'Full Stack Developer', company: 'StartupXYZ', required_skills: ['React', 'Node.js', 'Express', 'MongoDB', 'REST API'], description: 'Own features end-to-end from UI implementation to backend APIs and deployment.', location: 'San Francisco, CA', type: 'Full-time', url: 'https://example.com/job/2' },
+  { id: 'job-3', title: 'Data Analyst', company: 'DataDriven Co.', required_skills: ['Python', 'Pandas', 'SQL', 'Tableau', 'Excel'], description: 'Analyze product and business data to deliver actionable insights to stakeholders.', location: 'New York, NY', type: 'Full-time', url: 'https://example.com/job/3' },
+  { id: 'job-4', title: 'DevOps Engineer', company: 'CloudTech Solutions', required_skills: ['AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Terraform'], description: 'Design reliable cloud infrastructure and automate release pipelines.', location: 'Remote', type: 'Full-time', url: 'https://example.com/job/4' },
+  { id: 'job-5', title: 'Backend Developer', company: 'ServerSide Ltd.', required_skills: ['Node.js', 'Express', 'PostgreSQL', 'Redis', 'System Design'], description: 'Build resilient APIs and data services with strong reliability and observability.', location: 'Remote', type: 'Full-time', url: 'https://example.com/job/5' },
+  { id: 'job-6', title: 'Machine Learning Engineer', company: 'AI Innovations', required_skills: ['Python', 'TensorFlow', 'PyTorch', 'Scikit-learn', 'SQL'], description: 'Train and deploy machine learning models for production workflows.', location: 'Seattle, WA', type: 'Full-time', url: 'https://example.com/job/6' },
+  { id: 'job-7', title: 'UI Engineer', company: 'DesignTech', required_skills: ['React', 'CSS', 'Figma', 'Tailwind CSS', 'Accessibility'], description: 'Translate product design systems into pixel-precise, reusable UI components.', location: 'Los Angeles, CA', type: 'Full-time', url: 'https://example.com/job/7' },
+  { id: 'job-8', title: 'Software Engineer Intern', company: 'BigTech Corp', required_skills: ['JavaScript', 'Python', 'Git', 'SQL', 'Problem Solving'], description: 'Contribute to production features while learning engineering best practices.', location: 'Mountain View, CA', type: 'Internship', url: 'https://example.com/job/8' },
+  { id: 'job-9', title: 'Cloud Architect', company: 'CloudMasters', required_skills: ['AWS', 'Azure', 'Terraform', 'Docker', 'Kubernetes'], description: 'Design cloud migration plans and optimize distributed platform architecture.', location: 'Remote', type: 'Full-time', url: 'https://example.com/job/9' },
+  { id: 'job-10', title: 'QA Automation Engineer', company: 'QualityFirst Inc.', required_skills: ['Selenium', 'Playwright', 'Jest', 'Cypress', 'CI/CD'], description: 'Build robust automated test frameworks for web and API workflows.', location: 'Chicago, IL', type: 'Full-time', url: 'https://example.com/job/10' },
+  { id: 'job-11', title: 'Product Analyst', company: 'ProductVision', required_skills: ['SQL', 'Statistics', 'Excel', 'Tableau', 'Communication'], description: 'Drive roadmap decisions through experimentation and metric analysis.', location: 'Boston, MA', type: 'Full-time', url: 'https://example.com/job/11' },
+  { id: 'job-12', title: 'Senior Frontend Engineer', company: 'TechGiant', required_skills: ['React', 'TypeScript', 'Next.js', 'GraphQL', 'System Design'], description: 'Lead architecture and implementation of complex frontend systems.', location: 'Remote', type: 'Full-time', url: 'https://example.com/job/12' },
+  { id: 'job-13', title: 'Data Scientist', company: 'DataLabs', required_skills: ['Python', 'Machine Learning', 'Statistics', 'SQL', 'Pandas'], description: 'Build predictive models and communicate findings to product and business teams.', location: 'San Francisco, CA', type: 'Full-time', url: 'https://example.com/job/13' },
+  { id: 'job-14', title: 'Security Engineer', company: 'SecureNet', required_skills: ['Python', 'AWS', 'Docker', 'Linux', 'System Design'], description: 'Implement secure systems and automate vulnerability detection workflows.', location: 'Washington, DC', type: 'Full-time', url: 'https://example.com/job/14' },
+  { id: 'job-15', title: 'Mobile Developer', company: 'AppWorks', required_skills: ['React Native', 'TypeScript', 'iOS', 'Android', 'REST API'], description: 'Ship performant cross-platform mobile apps used by thousands of users.', location: 'Austin, TX', type: 'Full-time', url: 'https://example.com/job/15' },
+  { id: 'job-16', title: 'Platform Engineer', company: 'InfraCorp', required_skills: ['Linux', 'Docker', 'Kubernetes', 'Terraform', 'GitHub Actions'], description: 'Scale internal developer platform tooling and cloud automation.', location: 'Denver, CO', type: 'Full-time', url: 'https://example.com/job/16' },
+  { id: 'job-17', title: 'Technical Writer', company: 'DocuTech', required_skills: ['Technical Writing', 'API', 'Markdown', 'Git', 'Communication'], description: 'Create documentation that helps developers integrate quickly and safely.', location: 'Remote', type: 'Full-time', url: 'https://example.com/job/17' },
+  { id: 'job-18', title: 'Database Administrator', company: 'DataCore', required_skills: ['PostgreSQL', 'MySQL', 'MongoDB', 'SQL', 'Performance Tuning'], description: 'Maintain, tune, and secure production data infrastructure.', location: 'Phoenix, AZ', type: 'Full-time', url: 'https://example.com/job/18' },
+  { id: 'job-19', title: 'MLOps Engineer', company: 'ModelOps Labs', required_skills: ['Python', 'Docker', 'Kubernetes', 'AWS', 'CI/CD'], description: 'Operationalize ML pipelines and monitoring for production models.', location: 'Remote', type: 'Full-time', url: 'https://example.com/job/19' },
+  { id: 'job-20', title: 'Business Intelligence Engineer', company: 'InsightFlow', required_skills: ['SQL', 'Power BI', 'Tableau', 'Data Analysis', 'Communication'], description: 'Develop executive dashboards and trustworthy reporting pipelines.', location: 'Atlanta, GA', type: 'Full-time', url: 'https://example.com/job/20' },
+  { id: 'job-21', title: 'Site Reliability Engineer', company: 'ScaleOps', required_skills: ['Linux', 'AWS', 'Kubernetes', 'Monitoring', 'Automation'], description: 'Improve service reliability through automation, SLOs, and observability.', location: 'Remote', type: 'Full-time', url: 'https://example.com/job/21' },
+  { id: 'job-22', title: 'AI Product Engineer', company: 'PromptForge', required_skills: ['Python', 'TypeScript', 'React', 'Node.js', 'System Design'], description: 'Build AI-powered features spanning frontend, backend, and model workflows.', location: 'Remote', type: 'Full-time', url: 'https://example.com/job/22' },
 ];

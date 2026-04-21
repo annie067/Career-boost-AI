@@ -4,19 +4,31 @@ import { FileText, Mic, TrendingUp, ArrowRight, Award, Clock } from 'lucide-reac
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-interface DashboardData {
-  resumes: number;
-  interviews: number;
-  applications: number;
-  profile_completion: number;
-  timeline?: TimelineItem[];
-}
-
 interface TimelineItem {
   type: 'resume' | 'interview';
   title: string;
   score: number;
   date: string;
+}
+
+interface Stats {
+  resumes: number;
+  avgScore: number;
+  interviews: number;
+  avgInterviewScore: number;
+}
+
+interface TrendPoint {
+  name: string;
+  score: number;
+}
+
+interface DashboardData {
+  xp: number;
+  level: number;
+  stats: Stats;
+  timeline: TimelineItem[];
+  trendData: TrendPoint[];
 }
 
 export default function Dashboard() {
@@ -31,7 +43,7 @@ export default function Dashboard() {
           headers: { Authorization: `Bearer ${token}` }
         });
         const result = await res.json();
-        setData(result);
+        setData(result as DashboardData);
       } catch (err) {
         console.error('Failed to fetch stats', err);
       } finally {
@@ -66,7 +78,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user?.email?.split('@')[0]}! 👋</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user?.email?.split('@')[0]}!</h1>
           <p className="text-muted-foreground mt-2">Here's your career progress overview.</p>
         </div>
         <div className="px-4 py-2 bg-primary/10 text-primary rounded-full font-bold text-sm flex items-center gap-2 w-fit">
@@ -103,7 +115,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.2} />
                   <XAxis dataKey="name" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', borderRadius: '8px' }}
                     itemStyle={{ color: 'var(--color-primary)' }}
                   />
